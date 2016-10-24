@@ -11,7 +11,7 @@ except NameError:
 
 class ASTNode(object):
     def eval(self, context):
-        raise NotImplementedError()
+        raise NotImplementedError(self.__class__)
 
 
 @attr.s
