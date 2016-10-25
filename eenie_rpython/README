@@ -1,1 +1,3 @@
-Run with `python parser.py prog1.eenie`.
+Run with `python target.py prog1.eenie`.
+
+Translate with `python $PYPY_PATH/pypy/rpython/bin/rpython target.py` and run `target-c prog1.eenie`.
