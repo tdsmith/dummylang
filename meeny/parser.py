@@ -4,7 +4,12 @@ from lexer import token_names, lex
 import ast
 
 pg = ParserGenerator(
-    token_names
+    token_names,
+    precedence=[
+        ("left", ["ANGLE_R", "EQUAL", "NOT_EQUAL"]),
+        ("left", ["PLUS", "MINUS"]),
+        ("left", ["ASTERISK", "DIVIDE", "PERCENT"]),
+    ]
 )
 
 
@@ -70,9 +75,10 @@ def stmtlist_stmtlist(p):
 
 @pg.production('stmt : WRITE PAREN_L exp PAREN_R')
 @pg.production('stmt : WRITELN PAREN_L exp PAREN_R')
+@pg.production('stmt : WRITELN')
 def write_statement(p):
     return ast.WriteStatement(
-        p[2],
+        p[2] if len(p) > 1 else None,
         newline=True if p[0].gettokentype() == "WRITELN" else False
     )
 
@@ -89,45 +95,66 @@ def assign(p):
     return ast.Assignment(ast.IdentifierReference(p[0].getstr()), p[2])
 
 
+# Control statements
+@pg.production('stmt : WHILE exp DO stmtlst ENDWHILE')
+def loop(p):
+    return ast.WhileStatement(p[1], p[3])
+
+
+@pg.production('stmt : IF exp THEN stmtlst ELSE stmtlst ENDIF')
+def stmt_elif(p):
+    return ast.IfStatement(p[1], p[3], p[5])
+
+
+@pg.production('stmt : IF exp THEN stmtlst ENDIF')
+def stmt_if(p):
+    return ast.IfStatement(p[1], p[3], None)
+
+
 # Expression evaluation
-@pg.production('exp : term')
-def exp_term(p):
-    return p[0]
-
-
-@pg.production('exp : exp PLUS term')
-@pg.production('exp : exp MINUS term')
+@pg.production('exp : exp PLUS exp')
+@pg.production('exp : exp MINUS exp')
+@pg.production('exp : exp ASTERISK exp')
+@pg.production('exp : exp DIVIDE exp')
+@pg.production('exp : exp PERCENT exp')
+@pg.production('exp : exp EQUAL exp')
+@pg.production('exp : exp ANGLE_R exp')
 def exp_binary_term(p):
     token_type, left, right = p[1].gettokentype(), p[0], p[2]
     if token_type == "PLUS":
         return ast.Add(left, right)
     elif token_type == "MINUS":
         return ast.Subtract(left, right)
+    elif token_type == "ASTERISK":
+        return ast.Multiply(left, right)
+    elif token_type == "DIVIDE":
+        return ast.Divide(left, right)
+    elif token_type == "PERCENT":
+        return ast.Modulo(left, right)
+    elif token_type == "EQUAL":
+        return ast.EqualTo(left, right)
+    elif token_type == "ANGLE_R":
+        return ast.GreaterThan(left, right)
     else:
         assert False, "Shouldn't be here"
 
 
-@pg.production('term : factor')
-def exp_factor(p):
-    return p[0]
-
-
-@pg.production('factor : NUM')
+@pg.production('exp : NUM')
 def factor_num(p):
     return ast.Number(int(p[0].getstr()))
 
 
-@pg.production('factor : MINUS NUM')
+@pg.production('exp : MINUS NUM')
 def factor_negative_num(p):
     return ast.Number(-int(p[1].getstr()))
 
 
-@pg.production('factor : ID')
+@pg.production('exp : ID')
 def factor_id(p):
     return ast.IdentifierReference(p[0].getstr())
 
 
-@pg.production('factor : PAREN_L exp PAREN_R')
+@pg.production('exp : PAREN_L exp PAREN_R')
 def factor_parens(p):
     return p[1]
 

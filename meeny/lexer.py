@@ -2,7 +2,8 @@ from collections import OrderedDict
 from rply import LexerGenerator, Token
 
 reserved = ["program", "has", "decls", "int", "body", "end", "read",
-            "write", "writeln"]
+            "write", "writeln", "if", "then", "else", "endif", "while",
+            "do", "endwhile"]
 
 operators = OrderedDict([
     ("COMMA", ","),
@@ -11,6 +12,15 @@ operators = OrderedDict([
     ("ASSIGN", "<-"),
     ("PLUS", r"\+"),
     ("MINUS", r"-"),
+    ("ASTERISK", r"\*"),
+    ("DIVIDE", r"/"),
+    ("PERCENT", r"%"),
+    ("LESS_EQUAL", r"<="),
+    ("GREATER_EQUAL", r">="),
+    ("ANGLE_L", r"<"),
+    ("ANGLE_R", r">"),
+    ("NOT_EQUAL", r"!="),
+    ("EQUAL", r"="),
 ])
 
 lg = LexerGenerator()

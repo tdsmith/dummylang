@@ -74,6 +74,31 @@ class Subtract(BinaryOperation):
         return self.left.eval(context) - self.right.eval(context)
 
 
+class Multiply(BinaryOperation):
+    def eval(self, context):
+        return self.left.eval(context) * self.right.eval(context)
+
+
+class Divide(BinaryOperation):
+    def eval(self, context):
+        return self.left.eval(context) // self.right.eval(context)
+
+
+class Modulo(BinaryOperation):
+    def eval(self, context):
+        return self.left.eval(context) % self.right.eval(context)
+
+
+class GreaterThan(BinaryOperation):
+    def eval(self, context):
+        return self.left.eval(context) > self.right.eval(context)
+
+
+class EqualTo(BinaryOperation):
+    def eval(self, context):
+        return self.left.eval(context) == self.right.eval(context)
+
+
 @attr.s
 class Assignment(ASTNode):
     identifier = attr.ib(validator=attr.validators.instance_of(IdentifierReference))
@@ -98,8 +123,37 @@ class ReadStatement(ASTNode):
 
 @attr.s
 class WriteStatement(ASTNode):
-    value = attr.ib(validator=attr.validators.instance_of(ASTNode))
+    value = attr.ib(validator=attr.validators.optional(
+        attr.validators.instance_of(ASTNode)
+    ))
     newline = attr.ib(default=False)
 
     def eval(self, context):
-        sys.stdout.write(str(self.value.eval(context)) + ("\n" if self.newline else ""))
+        val = str(self.value.eval(context)) if self.value else ""
+        sys.stdout.write(val + ("\n" if self.newline else ""))
+
+
+@attr.s
+class WhileStatement(ASTNode):
+    condition = attr.ib(validator=attr.validators.instance_of(ASTNode))
+    body = attr.ib()
+
+    def eval(self, context):
+        while self.condition.eval(context):
+            for statement in self.body:
+                statement.eval(context)
+
+
+@attr.s
+class IfStatement(ASTNode):
+    condition = attr.ib(validator=attr.validators.instance_of(ASTNode))
+    body = attr.ib()
+    else_body = attr.ib()
+
+    def eval(self, context):
+        if self.condition.eval(context):
+            for statement in self.body:
+                statement.eval(context)
+        elif self.else_body:
+            for statement in self.else_body:
+                statement.eval(context)

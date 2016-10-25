@@ -1,0 +1,15 @@
+# An example program.
+
+program example has
+decls
+  int a
+body
+  a <- 9
+  while a > 0 do
+    a <- a-1
+    if(a = 2*(a/2)) then
+      write(a)
+    endif
+  endwhile
+  writeln
+end example
