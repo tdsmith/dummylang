@@ -1,22 +1,11 @@
 from rply.token import BaseBox
-
+from typing import Optional  # noqa
 import os
-
-
-def raw_input(prompt):
-    os.write(1, prompt)
-    res = ''
-    while True:
-        buf = os.read(0, 16)
-        if not buf:
-            return res
-        res += buf
-        if res[-1] == '\n':
-            return res[:-1]
 
 
 class ASTNode(BaseBox):
     def eval(self, context):
+        # type: (Dict[str, ASTNode]) -> Optional[ASTNode]
         raise NotImplementedError(self.__class__)
 
 
@@ -97,15 +86,21 @@ class BinaryOperation(ASTNode):
 class Add(BinaryOperation):
     def eval(self, context):
         # type: (Dict[str, ASTNode]) -> Number
-        return Number(self.left.eval(context).getint() +
-                      self.right.eval(context).getint())
+        left = self.left.eval(context)
+        right = self.right.eval(context)
+        if left is None or right is None:
+            raise AssertionError("Attempting to add a non-numeric value")
+        return Number(left.getint() + right.getint())
 
 
 class Subtract(BinaryOperation):
     def eval(self, context):
         # type: (Dict[str, ASTNode]) -> Number
-        return Number(self.left.eval(context).getint() -
-                      self.right.eval(context).getint())
+        left = self.left.eval(context)
+        right = self.right.eval(context)
+        if left is None or right is None:
+            raise AssertionError("Attempting to add a null value")
+        return Number(left.getint() - right.getint())
 
 
 class Assignment(ASTNode):
@@ -117,7 +112,10 @@ class Assignment(ASTNode):
     def eval(self, context):
         # type: (Dict[str, ASTNode]) -> None
         assert self.identifier.name in context
-        context[self.identifier.name] = self.value.eval(context)
+        value = self.value.eval(context)
+        if value is None:
+            raise AssertionError("Attempting to assign a null value")
+        context[self.identifier.name] = value
 
 
 class ReadStatement(ASTNode):
@@ -125,21 +123,26 @@ class ReadStatement(ASTNode):
         # type: (IdentifierReference) -> None
         self.target = target
 
+    @staticmethod
+    def raw_input(prompt):
+        # type: (bytes) -> bytes
+        os.write(1, prompt)
+        res = b''
+        while True:
+            buf = os.read(0, 16)
+            if not buf:
+                return res
+            res += buf
+            if res[-1] == '\n':
+                return res[:-1]
+
     def eval(self, context):
         # type: (Dict[str, ASTNode]) -> None
         assert self.target.name in context
         context[self.target.name] = (
-            Number(int(raw_input("Value for %s: " % self.target.name)))
+            Number(int(self.raw_input(b"Value for %s: " % self.target.name)))
             .eval(context)
         )
-
-
-def int_to_bytes(i):
-    try:
-        _ = b"a" + "a"  # noqa
-        return str(i)
-    except:
-        return str(i).encode("ascii")
 
 
 class WriteStatement(ASTNode):
@@ -148,7 +151,16 @@ class WriteStatement(ASTNode):
         self.value = value
         self.newline = newline
 
+    @staticmethod
+    def int_to_bytes(i):
+        # type: (int) -> bytes
+        try:
+            _ = b"a" + "a"  # type: ignore # noqa
+            return str(i)  # type: ignore
+        except:
+            return str(i).encode("ascii")
+
     def eval(self, context):
         # type: (Dict[str, ASTNode]) -> None
-        os.write(1, int_to_bytes(self.value.eval(context).getint()) +
+        os.write(1, self.int_to_bytes(self.value.eval(context).getint()) +
                  (b"\n" if self.newline else b""))

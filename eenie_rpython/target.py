@@ -5,9 +5,12 @@ import ast
 import lexer
 import parser
 
+from typing import AnyStr  # noqa
+
 
 def run(fp):
-    program = ""
+    # type: (int) -> None
+    program = b""
     while True:
         read = os.read(fp, 4096)
         if len(read) == 0:
@@ -20,6 +23,7 @@ def run(fp):
 
 
 def entry_point(argv):
+    # type: (List[AnyStr]) -> int
     try:
         filename = argv[1]
     except IndexError:

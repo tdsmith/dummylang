@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from rply import LexerGenerator, Token
+from typing import Callable, Iterator  # noqa
 
 reserved = ["program", "has", "decls", "int", "body", "end", "read",
             "write", "writeln"]
@@ -30,7 +31,7 @@ def id_reserved(token):
 
 callbacks = {
     "ID": [id_reserved],
-}
+}  # type: Dict[str, List[Callable[[Token], Token]]]
 
 lg.ignore(r"\s+")
 lg.ignore(r"^#.*")
@@ -40,6 +41,7 @@ token_names = [rule.name for rule in lg.rules] + [name.upper() for name in reser
 
 
 def lex(buf):
+    # type: (bytes) -> Iterator[Token]
     for token in lexer.lex(buf):
         for callback in callbacks.get(token.name, []):
             token = callback(token)
