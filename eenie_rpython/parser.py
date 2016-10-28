@@ -13,7 +13,7 @@ pg = ParserGenerator(
 # Program structure
 @pg.production('pgm : head decpart bodypart tail')
 def program(p):
-    # type: (List[Union[Token, ast.ASTList]]) -> ast.Program
+    # type: (List) -> ast.Program
     head, decpart, bodypart, tail = p
     assert head.getstr() == tail.getstr()
     return ast.Program(head.getstr(), decpart, bodypart)
@@ -27,13 +27,13 @@ def head(p):
 
 @pg.production('decpart : DECLS declist')
 def decls(p):
-    # type: (List) -> ast.ASTList
+    # type: (List) -> ast.IdentifierList
     return p[1]
 
 
 @pg.production('bodypart : BODY stmtlst')
 def bodypart(p):
-    # type: (List) -> ast.ASTList
+    # type: (List) -> ast.Block
     return p[1]
 
 
@@ -46,41 +46,39 @@ def tail(p):
 # Declarations
 @pg.production('declist : INT varlst')
 def declist_int(p):
-    # type: (List) -> ast.ASTList
+    # type: (List) -> ast.IdentifierList
     return p[1]
 
 
 @pg.production('declist : declist INT varlst')
 def declist_list(p):
-    # type: (List) -> ast.ASTList
-    return p[0].plus(p[2])
+    # type: (List) -> ast.IdentifierList
+    return p[0].extend(p[2])
 
 
 @pg.production('varlst : varlst COMMA ID')
 def varlst_varlst(p):
-    # type: (List) -> ast.ASTList
-    return p[0].plus(ast.ASTList(
-        [ast.Identifier(p[2].getstr())]
-    ))
+    # type: (List) -> ast.IdentifierList
+    return p[0].append_id_token(p[2])
 
 
 @pg.production('varlst : ID')
 def varlst_id(p):
-    # type: (List[Token]) -> ast.ASTList
-    return ast.ASTList([ast.Identifier(p[0].getstr())])
+    # type: (List[Token]) -> ast.IdentifierList
+    return ast.IdentifierList.from_id_token(p[0])
 
 
 # Body
 @pg.production('stmtlst : stmt')
 def stmtlist_stmt(p):
-    # type: (List[ast.ASTNode]) -> ast.ASTList
-    return ast.ASTList([p[0]])
+    # type: (List[ast.ASTNode]) -> ast.Block
+    return ast.Block.from_statement(p[0])
 
 
 @pg.production('stmtlst : stmtlst stmt')
 def stmtlist_stmtlist(p):
-    # type: (List) -> ast.ASTList
-    return p[0].plus(ast.ASTList([p[1]]))
+    # type: (List) -> ast.Block
+    return p[0].append(p[1])
 
 
 @pg.production('stmt : WRITE PAREN_L exp PAREN_R')

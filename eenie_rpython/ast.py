@@ -1,5 +1,5 @@
-from rply.token import BaseBox
-from typing import Optional  # noqa
+from rply.token import BaseBox, Token  # noqa
+from typing import Optional, Iterator  # noqa
 import os
 
 
@@ -9,22 +9,59 @@ class ASTNode(BaseBox):
         raise NotImplementedError(self.__class__)
 
 
-class ASTList(BaseBox):
-    def __init__(self, listitems):
-        # type: (List[ASTNode]) -> None
-        self.listitems = listitems
+class IdentifierList(BaseBox):
+    def __init__(self, identifiers):
+        # type: (List[Identifier]) -> None
+        self.identifiers = identifiers
 
-    def getlist(self):
-        # type: () -> List[ASTNode]
-        return self.listitems
+    @staticmethod
+    def from_id_token(tok):
+        # type: (Token) -> IdentifierList
+        id = Identifier(tok.getstr())
+        return IdentifierList([id])
 
-    def plus(self, other):
-        # type: (ASTList) -> ASTList
-        assert isinstance(other, ASTList)
-        return ASTList(self.listitems + other.listitems)
+    def append_id_token(self, tok):
+        # type: (Token) -> IdentifierList
+        id = Identifier(tok.getstr())
+        self.identifiers.append(id)
+        return self
+
+    def extend(self, other):
+        # type: (IdentifierList) -> IdentifierList
+        assert isinstance(other, IdentifierList)
+        self.identifiers.extend(other.identifiers)
+        return self
 
     def __iter__(self):
-        return iter(self.listitems)
+        # type: () -> Iterator[Identifier]
+        return iter(self.identifiers)
+
+
+class Block(ASTNode):
+    def __init__(self, statements):
+        # type: (List[ASTNode]) -> None
+        self.statements = statements
+
+    @staticmethod
+    def from_statement(statement):
+        # type: (ASTNode) -> Block
+        return Block([statement])
+
+    def extend(self, other):
+        # type: (Block) -> Block
+        assert isinstance(other, Block)
+        self.statements.extend(other.statements)
+        return self
+
+    def append(self, statement):
+        # type: (ASTNode) -> Block
+        self.statements.append(statement)
+        return self
+
+    def eval(self, context):
+        # type: (Dict[str, ASTNode]) -> None
+        for statement in self.statements:
+            statement.eval(context)
 
 
 class Number(ASTNode):
@@ -44,10 +81,7 @@ class Number(ASTNode):
 class Identifier(ASTNode):
     def __init__(self, name):
         # type: (str) -> None
-        self.idname = name
-
-    def get_name(self):
-        return self.idname
+        self.name = name
 
 
 class IdentifierReference(ASTNode):
@@ -62,7 +96,7 @@ class IdentifierReference(ASTNode):
 
 class Program(ASTNode):
     def __init__(self, name, decls, body):
-        # type: (str, ASTList, ASTList) -> None
+        # type: (str, IdentifierList, Block) -> None
         self.name = name
         self.decls = decls
         self.body = body
@@ -70,10 +104,8 @@ class Program(ASTNode):
     def eval(self, context):
         # type: (Dict[str, ASTNode]) -> None
         for identifier in self.decls:
-            context[identifier.get_name()] = Number(0)
-        for instruction in self.body:
-            print(instruction)
-            instruction.eval(context)
+            context[identifier.name] = Number(0)
+        self.body.eval(context)
 
 
 class BinaryOperation(ASTNode):
