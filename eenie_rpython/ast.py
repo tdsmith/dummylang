@@ -114,25 +114,26 @@ class BinaryOperation(ASTNode):
         self.left = left
         self.right = right
 
+    def value_of(self, node, context):
+        # type: (ASTNode, Dict[str, ASTNode]) -> Number
+        v = node.eval(context)
+        if v is None or not isinstance(v, Number):
+            raise AssertionError("Expected numeric value: %s" % v)
+        return v
+
 
 class Add(BinaryOperation):
     def eval(self, context):
         # type: (Dict[str, ASTNode]) -> Number
-        left = self.left.eval(context)
-        right = self.right.eval(context)
-        if left is None or right is None:
-            raise AssertionError("Attempting to add a non-numeric value")
-        return Number(left.getint() + right.getint())
+        return Number(self.value_of(self.left, context).getint() +
+                      self.value_of(self.right, context).getint())
 
 
 class Subtract(BinaryOperation):
     def eval(self, context):
         # type: (Dict[str, ASTNode]) -> Number
-        left = self.left.eval(context)
-        right = self.right.eval(context)
-        if left is None or right is None:
-            raise AssertionError("Attempting to add a null value")
-        return Number(left.getint() - right.getint())
+        return Number(self.value_of(self.left, context).getint() -
+                      self.value_of(self.right, context).getint())
 
 
 class Assignment(ASTNode):
