@@ -1,3 +1,5 @@
+from __future__ import division
+
 from rply.token import BaseBox, Token  # noqa
 from typing import Optional, Iterator  # noqa
 import os
@@ -133,6 +135,20 @@ class Subtract(BinaryOperation):
     def eval(self, context):
         # type: (Dict[str, ASTNode]) -> Number
         return Number(self.value_of(self.left, context).getint() -
+                      self.value_of(self.right, context).getint())
+
+
+class Multiply(BinaryOperation):
+    def eval(self, context):
+        # type: (Dict[str, ASTNode]) -> Number
+        return Number(self.value_of(self.left, context).getint() *
+                      self.value_of(self.right, context).getint())
+
+
+class Divide(BinaryOperation):
+    def eval(self, context):
+        # type: (Dict[str, ASTNode]) -> Number
+        return Number(self.value_of(self.left, context).getint() //
                       self.value_of(self.right, context).getint())
 
 

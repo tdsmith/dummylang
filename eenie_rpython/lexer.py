@@ -10,6 +10,8 @@ operators = OrderedDict([
     ("PAREN_L", r"\("),
     ("PAREN_R", r"\)"),
     ("ASSIGN", "<-"),
+    ("MULTIPLY", r"\*"),
+    ("DIVIDE", r"/"),
     ("PLUS", r"\+"),
     ("MINUS", r"-"),
 ])

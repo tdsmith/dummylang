@@ -9,6 +9,7 @@ pg = ParserGenerator(
     token_names,
     precedence=[
         ("left", ["ADD", "MINUS"]),
+        ("left", ["MULTIPLY", "DIVIDE"]),
     ]
 )
 
@@ -111,15 +112,18 @@ def assign(p):
 # Expression evaluation
 @pg.production('exp : exp PLUS exp')
 @pg.production('exp : exp MINUS exp')
+@pg.production('exp : exp MULTIPLY exp')
+@pg.production('exp : exp DIVIDE exp')
 def exp_binary_term(p):
     # type: (List[Union[Token, ast.ASTNode]]) -> ast.BinaryOperation
     token_type, left, right = p[1].gettokentype(), p[0], p[2]
-    if token_type == "PLUS":
-        return ast.Add(left, right)
-    elif token_type == "MINUS":
-        return ast.Subtract(left, right)
-    else:
-        raise AssertionError("Shouldn't be here")
+    mapping = {
+        "PLUS": ast.Add,
+        "MINUS": ast.Subtract,
+        "MULTIPLY": ast.Multiply,
+        "DIVIDE": ast.Divide,
+    }
+    return mapping[token_type](left, right)
 
 
 @pg.production('exp : NUM')
