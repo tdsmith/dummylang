@@ -6,7 +6,10 @@ import ast
 from typing import Union  # noqa
 
 pg = ParserGenerator(
-    token_names
+    token_names,
+    precedence=[
+        ("left", ["ADD", "MINUS"]),
+    ]
 )
 
 
